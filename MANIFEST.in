@@ -1,0 +1,6 @@
+include LICENSE
+include README
+include README.md
+include requirements.txt
+include prodstate/plugins/README
+recursive-include prodstate/plugins *.py
