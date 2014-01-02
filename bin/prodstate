@@ -1,0 +1,157 @@
+#!/usr/bin/env python
+'''
+prodstate - Production State Manager
+
+This program is responsible for maintaining the local Redis instance that stores prodstate. This
+script handles the various failures we might encounter and all of the logic for keeping things
+moving.
+
+TODO: Defensive programming. Lots of it.
+
+TODO: prodstate.py should be a Redis proxy. Incoming requests are forwarded upstream. This is
+mostly to be used by leafs so they don't have to connect to the root if they want to send a
+write to the root. (A fan-in proxy..)
+
+TODO: Lots of the sleeps should include random jitter and some might need backoff.
+
+TODO: There's a connection leak, presumably when leafs rebalance.
+'''
+
+import argparse
+import sys
+import time
+import logging
+import random
+
+from prodstate.redis_manager import healthy_local_redis
+from prodstate.root import health_check_root, BRANCH_SLAVE_COUNTS
+from prodstate.branch import health_check_branch
+from prodstate.leaf import health_check_leaf
+from prodstate.config import set_role, load_config, get_role, get_self_fqdn, get_bootstrap_nodes
+from prodstate.topology import get_best_source
+
+
+def main():
+    last_cmds, last_hb = None, time.time()
+    while True:
+        time.sleep(1)
+
+        # Only returns when we have a connection to a healthy, responding local redis instance.
+        # Of course, the instance might not have any data in it or it might be very stale data.
+        local_rd = healthy_local_redis()
+        info = local_rd.info()
+
+        # Everybody prints status every 15 seconds
+        now = time.time()
+        if now > last_hb + 15:
+            qps = '--'
+            if last_cmds is None:
+                last_cmds = info.get('total_commands_processed', 0)
+            else:
+                cur_cmds = info.get('total_commands_processed', 0)
+                qps = '%0.1f' % ((cur_cmds - last_cmds) / (now - last_hb))
+                last_cmds = cur_cmds
+            last_hb = now
+            logging.info('Heartbeat: %s node with %d/%d conns, %d keys, and %s RAM did %s QPS.' % (
+                         get_role(), info.get('connected_slaves', -1),
+                         info.get('connected_clients', -1),
+                         info.get('db0', {'keys': -1})['keys'],
+                         info.get('used_memory_human', '-1M'), qps))
+            if get_role() == 'root':
+                logging.info('Active branches:')
+                cts, total = [], 0
+                for branch in sorted(local_rd.smembers('prodstate:branches')):
+                    if branch not in BRANCH_SLAVE_COUNTS:
+                        continue
+                    total += BRANCH_SLAVE_COUNTS[branch]
+                    logging.info(' - %s: %d' % (branch, BRANCH_SLAVE_COUNTS[branch]))
+                logging.info('Draining branches:')
+                for branch in sorted(local_rd.smembers('prodstate:draining-branches')):
+                    if branch not in BRANCH_SLAVE_COUNTS:
+                        continue
+                    total += BRANCH_SLAVE_COUNTS[branch]
+                    logging.info(' - %s: %d' % (branch, BRANCH_SLAVE_COUNTS[branch]))
+                logging.info('Found %d total leaf nodes.' % total)
+
+        # Root nodes have very different rules.
+        if get_role() == 'root':
+            health_check_root(local_rd, info)
+            continue
+
+        # If we're in the middle of a sync, just print the status and move on.
+        if info.get('master_sync_in_progress', 0) == 1:
+            logging.info('%s node: sync in progress, %d bytes left' % (
+                         get_role(), info.get('master_sync_left_bytes', -1)))
+            continue
+
+        # If we aren't connected to anybody, then the only thing we should be doing is finding a
+        # new source and connecting to them.
+        if info['role'] != 'slave' or info.get('master_link_status', 'unknown') != 'up':
+            branch_host, branch_ip = get_best_source(local_rd)
+            if not branch_host:
+                logging.error('No or bad master, and no healthy branches found!')
+                time.sleep(5)
+                continue
+            logging.error('No or bad master, falling back to random branch: %s(%s).' % (
+                          branch_host, branch_ip))
+            local_rd.slaveof(host=branch_ip, port=2578)
+            time.sleep(3)  # Give a little extra time to start the sync.
+            continue
+
+        # Both branches and leaf nodes check the staleness.
+        l_time = local_rd.get('time')
+        if l_time:
+            delta = time.time() - float(l_time)
+            if delta > 10:
+                # TODO: we should probably write this to some status location so NRPE can check it.
+                logging.warning('Local redis-server seems stale: %0.2f seconds old.' % delta)
+                continue
+
+        # Special branch logic can now happen...
+        if get_role() == 'branch':
+            health_check_branch(local_rd, info)
+            continue
+
+        # Finally, special leaf logic that might need apply.
+        health_check_leaf(local_rd, info)
+
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser(description='prodstate tree manager')
+    parser.add_argument('--config', help="Configuration YAML to load.")
+    parser.add_argument('--force_role', choices=['root', 'branch'],
+                        help="Force to be a given role. Use only if you are sure!")
+    parser.add_argument('--initialize', action='store_true',
+                        help="Used to set up a cluster for the first time; see docs.")
+    parser.add_argument('-v', dest='verbose', action='store_true')
+    args = parser.parse_args()
+
+    logging.basicConfig(format='[%(asctime)s %(levelname)s] %(message)s')
+    log = logging.getLogger()
+    if args.verbose:
+        log.setLevel(logging.DEBUG)
+    else:
+        log.setLevel(logging.INFO)
+
+    if args.config:
+        load_config(args.config)
+    set_role(args.force_role)
+
+    # Now load in plugins via Annex.
+    # TODO: actually do it.
+
+    # If we're in the fallback branch list, and not a root, self-select into the branches.
+    if get_role() != 'root' and get_self_fqdn() in get_bootstrap_nodes():
+        logging.info('Node is in fallback branch list, setting role to branch.')
+        set_role('branch')
+
+    # If we're a leaf, we have a 1% chance of promoting ourselves to a branch. This gives a 1:100
+    # ratio for the tree, which should be reasonable for most use cases.
+    # TODO: add plugin for this logic.
+    if get_role() == 'leaf' and random.random() < 0.01:
+        logging.info('Leaf is self-selecting to become a branch.')
+        set_role('branch')
+
+    # TODO: add locking so we can't have two prodstates running.
+    logging.info('Beginning run, role: %s' % get_role())
+    sys.exit(main())

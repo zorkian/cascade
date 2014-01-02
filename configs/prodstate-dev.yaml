@@ -1,0 +1,29 @@
+#
+# prodstate-dev.yaml
+#
+# A very simple configuration for doing development.
+#
+
+redis:
+    configs:
+        common:
+            pidfile: redis-prodstate.pid
+            logfile: redis-prodstate.log
+            dir: .
+            dbfilename: redis-prodstate.db
+            appendfilename: redis-prodstate.aof
+            slave-read-only: yes
+            slave-serve-stale-data: yes
+        root:
+            save: 60 1
+            appendonly: yes
+            appendfsync: always
+        branch:
+            save: 60 1
+            appendonly: yes
+            appendfsync: everysec
+        leaf:
+            appendonly: no
+
+bootstrapfile: ./configs/bootstrap-branches
+plugindir: ./prodstate/plugins

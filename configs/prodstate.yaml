@@ -1,0 +1,53 @@
+#
+# prodstate.yaml
+#
+# A basic configuration file for prodstate.
+#
+
+# Configuration related to Redis.
+redis:
+    # Which Redis binary is used.
+    binary: /usr/local/bin/redis-server
+
+    # These items translate directly into the Redis configuration files. If you want to override
+    # the configs created by prodstate, you can change these. The configuration files are created
+    # first by applying the 'common' items, then overlaying them with the appropriate role specific
+    # configurations.
+    configs:
+        common:
+            pidfile: /var/run/redis-prodstate.pid
+            logfile: /var/log/redis-prodstate.log
+            dir: /var/lib/redis
+            dbfilename: redis-prodstate.db
+            appendfilename: redis-prodstate.aof
+            slave-read-only: yes
+            # Stale data is on so that we can change our master on the fly. If we
+            # turn this off we get (some) more safety, but then we have to handle
+            # MASTERDOWN errors in our applications. Also, it's not a lot more
+            # safety since we're connected to branches and there's nothing saying
+            # the branch is connected to the root, so we can still be serving stale
+            # data. Better to leave this to yes and handle lag in the application.
+            slave-serve-stale-data: yes
+        root:
+            # Be as durable as possible at the expense of possibly being a little slower to
+            # respond to write requests.
+            save: 60 1
+            appendonly: yes
+            appendfsync: always
+        branch:
+            # Be durable, but a little less durable is OK. The branches have a lot to do.
+            save: 60 1
+            appendonly: yes
+            appendfsync: everysec
+        leaf:
+            # Leaf nodes are not durable.
+            appendonly: no
+
+# These are bootstrap configurations. You need to specify some nodes that can be reliably
+# reached by leaf nodes that come up empty. These all have to be resolvable names, and reachable
+# on port 2578.
+bootstrapfile: /etc/prodstate/bootstrap-branches
+
+# To extend prodstate, you can write plugins for it. If specified, we will load plugins from
+# the given directory here. Please see the plugin documentation.
+plugindir: /etc/prodstate/plugins
