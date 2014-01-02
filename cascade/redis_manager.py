@@ -13,7 +13,7 @@ from topology import get_best_source
 def healthy_root_redis(local_rd):
     if not local_rd:
         return None
-    root_host = local_rd.get('prodstate:root')
+    root_host = local_rd.get('cascade:root')
     try:
         root_ip = socket.gethostbyname(root_host)
     except socket.gaierror:
@@ -87,7 +87,7 @@ def write_redis_config_file(master_ip):
     if role != 'root':
         config['slaveof'] = master_ip + ' 2578'
 
-    fd, tmpfile = tempfile.mkstemp(prefix='prodstate-%s-' % role)
+    fd, tmpfile = tempfile.mkstemp(prefix='cascade-%s-' % role)
     logging.debug('Writing config to: %s' % tmpfile)
 
     def unlink_tmpfile():  # Cleanup.

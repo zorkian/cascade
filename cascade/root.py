@@ -13,9 +13,9 @@ def health_check_root(local_rd, info):
     local_rd.set('time', time.time())
 
     # We are root and we are not a branch. Make sure state is correct.
-    if local_rd.get('prodstate:root') != get_self_fqdn():
-        local_rd.set('prodstate:root', get_self_fqdn())
-    local_rd.srem('prodstate:branches', get_self_fqdn())
+    if local_rd.get('cascade:root') != get_self_fqdn():
+        local_rd.set('cascade:root', get_self_fqdn())
+    local_rd.srem('cascade:branches', get_self_fqdn())
 
     # General purpose error notices...
     if info.get('connected_slaves', 0) == 0:
@@ -30,7 +30,7 @@ def health_check_root(local_rd, info):
     # whole loop. This also causes us to connect to every branch every second, which might chew
     # up ephemeral ports if we get lots of branches. Persistent connections? Threads to watch
     # each branch?
-    for key in ('prodstate:branches', 'prodstate:draining-branches'):
+    for key in ('cascade:branches', 'cascade:draining-branches'):
         for branch_host in local_rd.smembers(key):
             branch_rd = redis_conn(host=branch_host, port=2578, use_cache=True)
             if not branch_rd:
@@ -39,11 +39,11 @@ def health_check_root(local_rd, info):
                 continue
             branch_info = branch_rd.info('replication')
             # Regular branches are auto-pruned from the list if they go off-root.
-            if key == 'prodstate:branches' and branch_info['master_host'] != get_self_ip():
+            if key == 'cascade:branches' and branch_info['master_host'] != get_self_ip():
                 logging.info('Supposed branch %s is not connected to us, pruning.' % branch_host)
                 local_rd.srem(key, branch_host)
             # Draining branches get pruned at 0.
-            elif key == 'prodstate:draining-branches' and branch_info['connected_slaves'] == 0:
+            elif key == 'cascade:draining-branches' and branch_info['connected_slaves'] == 0:
                 logging.info('Drained branch %s finished, removing.' % branch_host)
                 local_rd.srem(key, branch_host)
             BRANCH_SLAVE_COUNTS[branch_host] = branch_info['connected_slaves']

@@ -2,17 +2,17 @@
 
 from distutils.core import setup
 
-execfile('prodstate/version.py')
+execfile('cascade/version.py')
 
 with open('requirements.txt') as requirements:
     required = requirements.read().splitlines()
 
 kwargs = {
-    "name": "prodstate",
+    "name": "cascade",
     "version": str(__version__),
-    "packages": ["prodstate"],
-    "package_data": {"prodstate": ["plugins/*.py"]},
-    "scripts": ["bin/prodstate"],
+    "packages": ["cascade"],
+    "package_data": {"cascade": ["plugins/*.py"]},
+    "scripts": ["bin/cascade"],
     "description": "Pluggable Distributed SSH Command Executer.",
     # PyPi, despite not parsing markdown, will prefer the README.md to the
     # standard README. Explicitly read it here.
@@ -23,8 +23,8 @@ kwargs = {
     "maintainer_email": "mark@qq.is",
     "license": "BSD",
     "install_requires": required,
-    "url": "https://github.com/xb95/prodstate",
-    "download_url": "https://github.com/xb95/prodstate/archive/master.tar.gz",
+    "url": "https://github.com/xb95/cascade",
+    "download_url": "https://github.com/xb95/cascade/archive/master.tar.gz",
     "classifiers": [
         "Programming Language :: Python",
         "Topic :: Software Development",

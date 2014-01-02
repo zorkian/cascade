@@ -8,27 +8,27 @@ from topology import get_best_source
 
 
 def health_check_leaf(local_rd, info):
-    # There is a chance that prodstate.py has restarted and last time we self-selected to be
+    # There is a chance that cascade.py has restarted and last time we self-selected to be
     # a branch, but this time we're not. If we're in the list of branches, then we should remove
     # ourselves.
-    local_branches = local_rd.smembers('prodstate:branches')
+    local_branches = local_rd.smembers('cascade:branches')
     root_rd = None
     if get_self_fqdn() in local_branches:
         root_rd, _ = healthy_root_redis(local_rd)
         if root_rd:
             logging.warning('Leaf node removing myself from list of branches.')
-            root_rd.srem('prodstate:branches', get_self_fqdn())
+            root_rd.srem('cascade:branches', get_self_fqdn())
 
     # If we have slaves, update the root so it can count our clients.
     if info.get('connected_slaves', 0) > 0:
         if not root_rd:
             root_rd, _ = healthy_root_redis(local_rd)
         if root_rd:
-            root_rd.sadd('prodstate:draining-branches', get_self_fqdn())
+            root_rd.sadd('cascade:draining-branches', get_self_fqdn())
 
     # Following from the above case, if our branch is no longer in the branches list, we could
     # nicely choose to move off of them. We don't, however, because then we can cause rebalance
-    # storms when prodstate gets rolled globally (and self-selected branches all move).
+    # storms when cascade gets rolled globally (and self-selected branches all move).
     #
     # Instead, let the periodic rebalance take care of the problem, since it won't pick leaf nodes
     # next time.

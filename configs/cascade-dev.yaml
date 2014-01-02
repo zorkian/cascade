@@ -1,5 +1,5 @@
 #
-# prodstate-dev.yaml
+# cascade-dev.yaml
 #
 # A very simple configuration for doing development.
 #
@@ -7,11 +7,11 @@
 redis:
     configs:
         common:
-            pidfile: redis-prodstate.pid
-            logfile: redis-prodstate.log
+            pidfile: redis-cascade.pid
+            logfile: redis-cascade.log
             dir: .
-            dbfilename: redis-prodstate.db
-            appendfilename: redis-prodstate.aof
+            dbfilename: redis-cascade.db
+            appendfilename: redis-cascade.aof
             slave-read-only: yes
             slave-serve-stale-data: yes
         root:
@@ -26,4 +26,4 @@ redis:
             appendonly: no
 
 bootstrapfile: ./configs/bootstrap-branches
-plugindir: ./prodstate/plugins
+plugindir: ./cascade/plugins

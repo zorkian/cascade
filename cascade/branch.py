@@ -10,7 +10,7 @@ def health_check_branch(local_rd, info):
     if not root_rd:
         logging.error('Failed to connect to root instance on %s!' % root_ip)
         return
-    root_rd.sadd('prodstate:branches', get_self_fqdn())
+    root_rd.sadd('cascade:branches', get_self_fqdn())
 
     # Since we know we're up to date, check if we're using a random branch and, if so, let's try
     # to promote ourselves up to the root.

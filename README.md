@@ -1,12 +1,12 @@
-# prodstate
+# Cascade
 
 ### Description
 
-Prodstate is a project for managing a tree of Redis instances for
+Cascade is a project for managing a tree of Redis instances for
 quickly and reliably propagating state information across a large
 production cluster (10,000+ machines).
 
-In essence, prodstate is designed for data that fits a certain pattern:
+In essence, Cascade is designed for data that fits a certain pattern:
 
 * Available from every machine
 * Quick updates (sub-second normal case, worst case several seconds)
@@ -20,7 +20,7 @@ are presently active, service discovery, certain machine level
 organizational data, etc.
 
 This is NOT a system that is designed to store data that is of interest
-only to a small subset of your machine population. Since prodstate
+only to a small subset of your machine population. Since Cascade
 distributes the data to every machine, the dataset should be useful to
 nearly every machine. Global state information.
 
@@ -29,7 +29,7 @@ nearly every machine. Global state information.
 Available in PyPi:
 
 ```bash
-pip install prodstate
+pip install Cascade
 ```
 
 You will also need to have installed [Redis](http://redis.io). I
@@ -50,7 +50,7 @@ __Network partition.__
 The immediate effect is that anybody who is on the side of the partition
 without the root node will stop getting updates.
 
-At the moment, prodstate does not correct for partitions. Nodes
+At the moment, Cascade does not correct for partitions. Nodes
 will know when they stop receiving data, and the branches that lose
 connection to the root will retry, but no action is presently taken to
 address the situation.
@@ -59,7 +59,7 @@ __Root crash/failure.__
 
 If a root fails in such a way as to become unreachable, presently the
 cluster stops permitting writes (since only root nodes are writeable).
-Prodstate does not yet self-recover from a root failure, so an
+Cascade does not yet self-recover from a root failure, so an
 administrator will need to designate a new root.
 
 A goal is to allow us to determine that the root has failed, and
@@ -76,11 +76,11 @@ without operator intervention.
 
 ### Monitoring
 
-This section contains some guidelines for monitoring your prodstate
+This section contains some guidelines for monitoring your Cascade
 cluster.
 
 The main monitoring is that you should, on every machine in which you
-run prodstate, monitor the local Redis instance for:
+run Cascade, monitor the local Redis instance for:
 
 * Availability (make sure it's up)
 
@@ -88,14 +88,14 @@ run prodstate, monitor the local Redis instance for:
   it's too far behind)
 
 As long as the Redis instance is available and 'time' is advancing, then
-prodstate data is available on this machine.
+Cascade data is available on this machine.
 
-Separately, you will also want to monitor the prodstate Python program
+Separately, you will also want to monitor the Cascade Python program
 itself to make sure that it's up and running.
 
 ### Limitations
 
-Prodstate has been tested up to about 100MB of data, at which point the
+Cascade has been tested up to about 100MB of data, at which point the
 author felt it was getting unwieldy and global resyncs were becoming
 difficult.
 
@@ -112,7 +112,7 @@ nearly a terabyte of data to move around.
 
 ### On Redis
 
-The basic premise of prodstate is that it is a program for managing the
+The basic premise of Cascade is that it is a program for managing the
 configuration and replication of a cluster of Redis instances.
 
 Redis itself is basically a "data structure server". It provides
@@ -126,14 +126,14 @@ that fits well in a hash structure. Similarly, "give me machines that
 are running monkey instances" is a set.
 
 Redis also has robust replication built-in, so master/slave is easy to
-set up and works well. Prodstate extends this concept into, perhaps, a
+set up and works well. Cascade extends this concept into, perhaps, a
 way that the Redis authors didn't intend: a giant tree of thousands of
 instances replicating the same set of data.
 
 ### Todo
 
 * Implement a Nagios plugin that can run on each machine and monitor
-  prodstate correctly.
+  Cascade correctly.
 
 ### Known Bugs
 

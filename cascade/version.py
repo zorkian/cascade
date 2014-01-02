@@ -1,5 +1,5 @@
 '''
-Version information about Prodstate
+Version information about Cascade
 
 Please keep this empty. It's used by setup.py and the application.
 '''

@@ -23,10 +23,10 @@ def get_best_source(local_rd, prefer_root=False):
     # Also, if we have data in our local Redis (which might be stale) then let's include that,
     # it doesn't hurt to have it.
     if local_rd:
-        root = local_rd.get('prodstate:root')
+        root = local_rd.get('cascade:root')
         if root:
             roots.append(root)
-        branches = local_rd.smembers('prodstate:branches')
+        branches = local_rd.smembers('cascade:branches')
         if branches:
             nodes.extend(branches)
 

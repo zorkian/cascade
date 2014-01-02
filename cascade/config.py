@@ -18,7 +18,7 @@ CFG = {
 def load_config(cfg_file):
     '''
     Given a file, try to load it as a YAML dictionary. If it isn't one, then it's probably not
-    a valid prodstate configuration.
+    a valid cascade configuration.
     '''
     if not os.path.exists(cfg_file):
         return False

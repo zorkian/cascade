@@ -1,14 +1,14 @@
 #!/usr/bin/env python
 '''
-prodstate - Production State Manager
+cascade - Production State Manager
 
-This program is responsible for maintaining the local Redis instance that stores prodstate. This
+This program is responsible for maintaining the local Redis instance that stores cascade. This
 script handles the various failures we might encounter and all of the logic for keeping things
 moving.
 
 TODO: Defensive programming. Lots of it.
 
-TODO: prodstate.py should be a Redis proxy. Incoming requests are forwarded upstream. This is
+TODO: cascade.py should be a Redis proxy. Incoming requests are forwarded upstream. This is
 mostly to be used by leafs so they don't have to connect to the root if they want to send a
 write to the root. (A fan-in proxy..)
 
@@ -23,12 +23,12 @@ import time
 import logging
 import random
 
-from prodstate.redis_manager import healthy_local_redis
-from prodstate.root import health_check_root, BRANCH_SLAVE_COUNTS
-from prodstate.branch import health_check_branch
-from prodstate.leaf import health_check_leaf
-from prodstate.config import set_role, load_config, get_role, get_self_fqdn, get_bootstrap_nodes
-from prodstate.topology import get_best_source
+from cascade.redis_manager import healthy_local_redis
+from cascade.root import health_check_root, BRANCH_SLAVE_COUNTS
+from cascade.branch import health_check_branch
+from cascade.leaf import health_check_leaf
+from cascade.config import set_role, load_config, get_role, get_self_fqdn, get_bootstrap_nodes
+from cascade.topology import get_best_source
 
 
 def main():
@@ -60,13 +60,13 @@ def main():
             if get_role() == 'root':
                 logging.info('Active branches:')
                 cts, total = [], 0
-                for branch in sorted(local_rd.smembers('prodstate:branches')):
+                for branch in sorted(local_rd.smembers('cascade:branches')):
                     if branch not in BRANCH_SLAVE_COUNTS:
                         continue
                     total += BRANCH_SLAVE_COUNTS[branch]
                     logging.info(' - %s: %d' % (branch, BRANCH_SLAVE_COUNTS[branch]))
                 logging.info('Draining branches:')
-                for branch in sorted(local_rd.smembers('prodstate:draining-branches')):
+                for branch in sorted(local_rd.smembers('cascade:draining-branches')):
                     if branch not in BRANCH_SLAVE_COUNTS:
                         continue
                     total += BRANCH_SLAVE_COUNTS[branch]
@@ -117,7 +117,7 @@ def main():
 
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description='prodstate tree manager')
+    parser = argparse.ArgumentParser(description='cascade tree manager')
     parser.add_argument('--config', help="Configuration YAML to load.")
     parser.add_argument('--force_role', choices=['root', 'branch'],
                         help="Force to be a given role. Use only if you are sure!")
@@ -152,6 +152,6 @@ if __name__ == '__main__':
         logging.info('Leaf is self-selecting to become a branch.')
         set_role('branch')
 
-    # TODO: add locking so we can't have two prodstates running.
+    # TODO: add locking so we can't have two cascades running.
     logging.info('Beginning run, role: %s' % get_role())
     sys.exit(main())

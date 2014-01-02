@@ -1,7 +1,7 @@
 #
-# prodstate.yaml
+# cascade.yaml
 #
-# A basic configuration file for prodstate.
+# A basic configuration file for Cascade.
 #
 
 # Configuration related to Redis.
@@ -10,16 +10,16 @@ redis:
     binary: /usr/local/bin/redis-server
 
     # These items translate directly into the Redis configuration files. If you want to override
-    # the configs created by prodstate, you can change these. The configuration files are created
+    # the configs created by Cascade, you can change these. The configuration files are created
     # first by applying the 'common' items, then overlaying them with the appropriate role specific
     # configurations.
     configs:
         common:
-            pidfile: /var/run/redis-prodstate.pid
-            logfile: /var/log/redis-prodstate.log
+            pidfile: /var/run/redis-cascade.pid
+            logfile: /var/log/redis-cascade.log
             dir: /var/lib/redis
-            dbfilename: redis-prodstate.db
-            appendfilename: redis-prodstate.aof
+            dbfilename: redis-cascade.db
+            appendfilename: redis-cascade.aof
             slave-read-only: yes
             # Stale data is on so that we can change our master on the fly. If we
             # turn this off we get (some) more safety, but then we have to handle
@@ -46,8 +46,8 @@ redis:
 # These are bootstrap configurations. You need to specify some nodes that can be reliably
 # reached by leaf nodes that come up empty. These all have to be resolvable names, and reachable
 # on port 2578.
-bootstrapfile: /etc/prodstate/bootstrap-branches
+bootstrapfile: /etc/cascade/bootstrap-branches
 
-# To extend prodstate, you can write plugins for it. If specified, we will load plugins from
+# To extend Cascade, you can write plugins for it. If specified, we will load plugins from
 # the given directory here. Please see the plugin documentation.
-plugindir: /etc/prodstate/plugins
+plugindir: /etc/cascade/plugins
