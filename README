@@ -148,3 +148,11 @@ Known Bugs
 ~~~~~~~~~~
 
 Almost certainly quite many. This is a very young project.
+
+Credits
+~~~~~~~
+
+Gary M. Josack <gary@byoteki.com> for help with Python, organization,
+identifying failure cases, and general help.
+
+Written and maintained by Mark Smith <mark@qq.is>.

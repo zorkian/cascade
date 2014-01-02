@@ -138,3 +138,10 @@ instances replicating the same set of data.
 ### Known Bugs
 
 Almost certainly quite many. This is a very young project.
+
+### Credits
+
+Gary M. Josack &lt;gary@byoteki.com&gt; for help with Python, organization,
+identifying failure cases, and general help.
+
+Written and maintained by Mark Smith &lt;mark@qq.is&gt;.
