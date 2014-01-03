@@ -1,3 +1,4 @@
 PyYAML
 annex==0.2
 argparse==1.2.1
+redis==2.9.0

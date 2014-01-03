@@ -3,11 +3,15 @@ import os
 import socket
 import logging
 
+from base_plugin import CascadePlugin
+from annex import Annex
+
 
 CFG = {
     'SELF_FQDN': socket.getfqdn(),
     'SELF_IP': socket.gethostbyname(socket.getfqdn()),
     'ROLE': 'leaf',
+    'PLUGINS': [],
 
     'REDIS_BINARY': '/usr/local/bin/redis-server',
     'REDIS_CONFIGS': {},
@@ -37,6 +41,9 @@ def load_config(cfg_file):
         if 'binary' in cfg['redis']:
             assert os.path.exists(cfg['redis']['binary']), "redis.binary needs to exist"
             CFG['REDIS_BINARY'] = cfg['redis']['binary']
+
+    if 'plugindir' in cfg:
+        CFG['PLUGINS'] = Annex(CascadePlugin, [cfg['plugindir']])
 
     return True
 
@@ -91,3 +98,10 @@ def get_redis_configs():
     Return our dict containing Redis configurations.
     '''
     return CFG['REDIS_CONFIGS']
+
+
+def get_plugins():
+    '''
+    Return list of plugins that are loaded.
+    '''
+    return CFG['PLUGINS']

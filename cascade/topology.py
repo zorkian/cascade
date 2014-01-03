@@ -3,7 +3,7 @@ import random
 import socket
 import time
 
-from config import get_bootstrap_nodes, get_self_fqdn
+from config import get_bootstrap_nodes, get_self_fqdn, get_plugins
 from utils import redis_conn
 
 
@@ -40,7 +40,9 @@ def get_best_source(local_rd, prefer_root=False):
     nodes = list(set(nodes))
     random.shuffle(nodes)
 
-    # TODO: call plugin here.
+    # Invoke our plugin for filtering sources.
+    for plugin in get_plugins():
+        nodes = plugin.filter_sources(nodes)
 
     # Now put roots at the front or back, depending. This ignores adjacency.
     if prefer_root:

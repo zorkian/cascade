@@ -1,10 +1,9 @@
-#!/usr/bin/env python
-#
-# Implements adjacency logic for sorting a list of possible branches into a priority order.
-#
+from cascade.base_plugin import CascadePlugin
 
-from base_plugin import CascadePlugin
 
 class NodeAdjacency(CascadePlugin):
-    def run(self, *args, **kwargs):
-        print args, kwargs
+    '''
+    Demo plugin. Doesn't actually do anything, but shows how to create a filter_sources plugin.
+    '''
+    def filter_sources(self, sources):
+        return sources

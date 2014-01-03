@@ -137,9 +137,6 @@ if __name__ == '__main__':
         load_config(args.config)
     set_role(args.force_role)
 
-    # Now load in plugins via Annex.
-    # TODO: actually do it.
-
     # If we're in the fallback branch list, and not a root, self-select into the branches.
     if get_role() != 'root' and get_self_fqdn() in get_bootstrap_nodes():
         logging.info('Node is in fallback branch list, setting role to branch.')
